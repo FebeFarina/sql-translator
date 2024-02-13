@@ -1,8 +1,25 @@
-import React, {useState} from "react";
+import React, {useState, useEffect} from "react";
+import {SqlDatabase} from "langchain/sql_db";
+import {DataSource} from "typeorm";
 
 function App() {
   const [query, setQuery] = useState("");
   const [result, setResult] = useState("");
+
+  useEffect(() => {
+    const initialize = async () => {
+      const datasource = new DataSource({
+        type: "postgres",
+        database: "../moviesdb",
+      });
+      const db = await SqlDatabase.fromDataSourceParams({
+        appDataSource: datasource,
+      });
+      console.log(db.allTables.map((table) => table.tableName));
+    };
+
+    initialize();
+  });
 
   const handleSubmit = (event) => {
     event.preventDefault();
@@ -42,7 +59,6 @@ function App() {
           readOnly
           placeholder="Your SQL will appear here"
           value={result}></textarea>
-
       </div>
     </div>
   );
