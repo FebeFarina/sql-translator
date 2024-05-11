@@ -3,11 +3,11 @@ import React, { useState, useEffect } from 'react';
 
 function App() {
 
+  const [queryList, setQueryList] = useState([]);
   const [answers, setAnswers] = useState([]);
   const [sqlQuerys, setSqlQuerys] = useState([]);
-  const [query, setQuery] = useState('Tell me about the database');
+  const [query, setQuery] = useState();
   const [connectionStatus, setConnectionStatus] = useState(undefined);
-  const [databaseInfo, setDatabaseInfo] = useState(undefined);
   const [isLoading, setIsLoading] = useState(false);
   const [databaseType, setDatabaseType] = useState("mysql");
   const [port, setPort] = useState(3306);
@@ -66,7 +66,7 @@ function App() {
     });
 
     if (response.ok) {
-      setDatabaseInfo({
+      const connectionData = {
         databaseType,
         host,
         port,
@@ -74,34 +74,38 @@ function App() {
         password,
         database,
         schema,
-      });
+      };
       setConnectionStatus(true);
-    } else {
-      setConnectionStatus(false);
+      return connectionData;
     }
+    setConnectionStatus(false);
+    return false;
   };
 
   const handleQuerySubmit = async (event) => {
     setIsLoading(true);
     event.preventDefault();
-    await testConnection();
-    if (!connectionStatus) {
+    const connection = await testConnection();
+    console.log(connection ? "Connection OK" : "Connection failed")
+    if (!connection) {
       setIsLoading(false);
       return;
     }
-    const response = await fetch("http://localhost:3001/", {
+    const response = await fetch("http://localhost:3001", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        databaseInfo,
+        databaseInfo: connection,
         query,
       }),
     });
     const data = await response.json();
     setAnswers(answers.concat(data.answer));
     setSqlQuerys(sqlQuerys.concat(data.sqlQuery));
+    setQueryList(queryList.concat(query));
+    setQuery("");
     setIsLoading(false);
   };
 
@@ -191,10 +195,12 @@ function App() {
             <div className="p-5">
               <h2 className="text-center text-red-600">Connection failed</h2>
             </div>
-          ) : null}
+          ) : <div className="p-5">
+            <h2 className="text-center text-yellow-600"> Please, enter connection info before querying </h2>
+          </div>}
 
           <button className={answers.length > 0 ? "w-full bg-red-500 text-white py-2" : "w-full bg-red-500 text-white py-2 opacity-50 cursor-not-allowed"} type="button"
-          onClick={clearChat}>Clear Chat</button>
+            onClick={clearChat}>Clear Chat</button>
         </div>
       </div>
       <div className="w-4/5 relative flex max-w-full flex-1 flex-col overflow-hidden bg-slate-700">
@@ -203,22 +209,22 @@ function App() {
             <div className="w-auto mb-4 border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600">
               <div className="px-4 py-2 bg-white rounded-t-lg dark:bg-gray-800">
                 <label htmlFor="query" className="sr-only">
-                  Escriba su petición
+                  Type your query
                 </label>
                 <textarea
                   id="query"
                   rows="4"
                   className="w-full px-0 text-sm text-gray-900 bg-white border-0 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400 resize-none"
-                  placeholder="Escriba su petición"
+                  placeholder="Type your query"
                   required
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}></textarea>
               </div>
-              <div className="flex items-center justify-between px-3 py-2 border-t dark:border-gray-600">
+              <div className="flex items-center justify-start px-3 py-2 border-t dark:border-gray-600">
                 <button
                   type="submit"
-                  className="inline-flex items-center py-2.5 px-4 text-xs font-medium text-center text-white bg-blue-700 rounded-lg focus:ring-4 focus:ring-blue-200 dark:focus:ring-blue-900 hover:bg-blue-800">
-                  Generar SQL
+                  className="inline-flex items-center py-2.5 px-4 mr-5 text-xs font-medium text-center text-white bg-blue-700 rounded-lg focus:ring-4 focus:ring-blue-200 dark:focus:ring-blue-900 hover:bg-blue-800">
+                  Generate SQL
                 </button>
               </div>
             </div>
@@ -231,18 +237,28 @@ function App() {
             ) : (
               <div className="flex flex-col">
                 {answers.map((answer, index) => (
-                  <div key={index} className="mb-5">
-                    <h2 className="text-white">Answer {index + 1}</h2>
-                    <p className="text-white">{answer}</p>
-                    <p className="text-white">SQL Query: {sqlQuerys[index]}</p>
+                  <div key={index} className="mb-5 flex justify-between">
+                    <div className="flex-1 ml-2 bg-slate-800 rounded border-gray-200 dark:border-gray-600">
+                      <h2 className="text-white m-2">Query</h2>
+                      <p className="text-white m-2">{queryList[index]}</p>
+                    </div>
+                    <div className="flex-1 mx-2 bg-slate-800 rounded border-gray-200 dark:border-gray-600">
+                      <h2 className="text-white m-2">Answer</h2>
+                      <p className="text-white m-2">{answer}</p>
+                    </div>
+                    <div className="flex-1 ml-2 bg-slate-800 rounded border-gray-200 dark:border-gray-600">
+                      <h2 className="text-white m-2">SQL Query</h2>
+                      <p className="text-white m-2">{sqlQuerys[index]}</p>
+                    </div>
                   </div>
                 ))}
               </div>
             )}
+
           </div>
         </main>
-      </div>
-    </div>
+      </div >
+    </div >
   );
 }
 
