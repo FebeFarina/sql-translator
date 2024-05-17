@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 
 function App() {
 
+  const [customPrompt, setCustomPrompt] = useState("")
   const [queryList, setQueryList] = useState([]);
   const [answers, setAnswers] = useState([]);
   const [sqlQuerys, setSqlQuerys] = useState([]);
@@ -99,6 +100,8 @@ function App() {
       body: JSON.stringify({
         databaseInfo: connection,
         query,
+        customPrompt,
+
       }),
     });
     const data = await response.json();
@@ -196,7 +199,7 @@ function App() {
               <h2 className="text-center text-red-600">Connection failed</h2>
             </div>
           ) : <div className="p-5">
-            <h2 className="text-center text-yellow-600"> Please, enter connection info before querying </h2>
+            <h2 className="text-center text-yellow-600"> Please, enter connection info before making the question </h2>
           </div>}
 
           <button className={answers.length > 0 ? "w-full bg-red-500 text-white py-2" : "w-full bg-red-500 text-white py-2 opacity-50 cursor-not-allowed"} type="button"
@@ -209,16 +212,28 @@ function App() {
             <div className="w-auto mb-4 border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600">
               <div className="px-4 py-2 bg-white rounded-t-lg dark:bg-gray-800">
                 <label htmlFor="query" className="sr-only">
-                  Type your query
+                  Type your question
                 </label>
                 <textarea
                   id="query"
                   rows="4"
                   className="w-full px-0 text-sm text-gray-900 bg-white border-0 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400 resize-none"
-                  placeholder="Type your query"
+                  placeholder="Type your question"
                   required
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}></textarea>
+              </div>
+              <div className="px-4 py-2 bg-white border-t dark:border-gray-600 border-gray-200 dark:bg-gray-800">
+                <label htmlFor="query" className="sr-only">
+                  Type your question
+                </label>
+                <textarea
+                  id="query"
+                  rows="4"
+                  className="w-full px-0 text-sm text-gray-900 bg-white border-0 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400 resize-none"
+                  placeholder="Add a custom prompt: e.g. 'Give me the answer in Spanish.'"
+                  value={customPrompt}
+                  onChange={(e) => setCustomPrompt(e.target.value)}></textarea>
               </div>
               <div className="flex items-center justify-start px-3 py-2 border-t dark:border-gray-600">
                 <button
@@ -226,7 +241,14 @@ function App() {
                   className="inline-flex items-center py-2.5 px-4 mr-5 text-xs font-medium text-center text-white bg-blue-700 rounded-lg focus:ring-4 focus:ring-blue-200 dark:focus:ring-blue-900 hover:bg-blue-800">
                   Generate SQL
                 </button>
+                <button
+                  type="submit"
+                  onClick={(e) => { e.preventDefault(); setQuery("Tell me all you know about the database"); handleQuerySubmit(e) }}
+                  className="inline-flex items-center py-2.5 px-4 mr-5 text-xs font-medium text-center text-white bg-green-700 rounded-lg focus:ring-4 focus:ring-green-200 dark:focus:ring-green-900 hover:bg-green-800">
+                  Sample Quesiton
+                </button>
               </div>
+
             </div>
           </form>
           <div className="p-5">
@@ -236,11 +258,11 @@ function App() {
               </div>
             ) : (
               <div className="flex flex-col">
-                {answers.map((answer, index) => (
+                {[...answers].reverse().map((answer, index) => (
                   <div key={index} className="mb-5 flex justify-between">
                     <div className="flex-1 ml-2 bg-slate-800 rounded border-gray-200 dark:border-gray-600">
                       <h2 className="text-white m-2">Query</h2>
-                      <p className="text-white m-2">{queryList[index]}</p>
+                      <p className="text-white m-2">{queryList[queryList.length - 1 - index]}</p>
                     </div>
                     <div className="flex-1 mx-2 bg-slate-800 rounded border-gray-200 dark:border-gray-600">
                       <h2 className="text-white m-2">Answer</h2>
@@ -248,7 +270,7 @@ function App() {
                     </div>
                     <div className="flex-1 ml-2 bg-slate-800 rounded border-gray-200 dark:border-gray-600">
                       <h2 className="text-white m-2">SQL Query</h2>
-                      <p className="text-white m-2">{sqlQuerys[index]}</p>
+                      <p className="text-white m-2">{sqlQuerys[sqlQuerys.length - 1 - index]}</p>
                     </div>
                   </div>
                 ))}
